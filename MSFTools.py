@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from multiprocessing import Pool, cpu_count
 from scipy.integrate import odeint, solve_ivp
 from copy import deepcopy
 
@@ -89,7 +90,7 @@ def MSF(Func, DFunc, H, params, plotting):
 		ax.plot(x[:,0], x[:,1], x[:,2])
 		plt.show()
 
-	T, dt = [500, 0.005]			# Total time and time step for LLE estimation
+	T, dt = [50, 0.01]			# Total time and time step for LLE estimation
 	# Increment the synchronous state s seperately for Liapunov
 	sol = solve_ivp(Func, [0, T], sol.y.reshape((d,)), 
 					t_eval=np.linspace(0,T,num=int(T/dt)), 
@@ -97,7 +98,7 @@ def MSF(Func, DFunc, H, params, plotting):
 	# Now Use Custom Bisection Algorithm 
 	# to find the zeros of the MSF 
 	# 	(assumes 2, but searches until maxK)
-	maxK, dK = [10., 0.1]	# largest allowable K and Kstep size
+	maxK, dK = [20., 0.1]	# largest allowable K and Kstep size
 	Kb = deepcopy(dK) 		# initialize for while loop criteria
 	zeroses = []			# collect al zeros
 	cnt = 0
@@ -160,14 +161,14 @@ def PlotMSF(Func, DFunc, H, params, cores):
 	sol = solve_ivp(Func, [0,5000], y0, t_eval=[5000], method='RK45', args=params)
 	s = sol.y.reshape((n,))		# a synchronous orbit IC
 	# Accuracy of LLE estimator
-	T, dt = [200, 0.001]			# Total time and time step for LLE estimation
+	T, dt = [50, 0.0025]			# Total time and time step for LLE estimation
 	N = int(T/dt)				# Numer of iterations used for LLE estimation
 	# Increment the synchronous state s seperately for Liapunov
 	sol = solve_ivp(Func, [0, T], s, t_eval=np.linspace(0,T,num=N), method='RK45', args=params)
 	# Now Use Custom Bisection Algorithm 
 	# to find the zeros of the MSF 
 	# 	(assumes 2, but searches until maxK)
-	maxK, dK = [20., 0.01]	# largest allowable K and Kstep size
+	maxK, dK = [20., 0.1]	# largest allowable K and Kstep size
 	K = int(maxK/dK)
 	Ks = np.linspace(dK, maxK, num=K)
 	pool = Pool(cores)

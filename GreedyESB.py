@@ -70,7 +70,6 @@ def process_input(args):
 		Func = rossler
 		DFunc = DF_rossler
 	elif args.system == 'Lorenz':
-		params = (10.,28.,8./3.)
 		from Attractor_Functions import lorenz, DF_lorenz
 		Func = lorenz
 		DFunc = DF_lorenz
@@ -138,6 +137,7 @@ if __name__=='__main__':
 		Interval = MSF(Func, DFunc, H, params, 'plotting')	
 	# Find a coupling strength that synchronizes if exists
 	C = Find_C(Interval, E, C_max, False)		
+	print('Using C=%s' % C)
 	if not C:
 		raise Exception('Original graph not Synchronizable')
 
