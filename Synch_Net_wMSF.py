@@ -354,7 +354,7 @@ if __name__=='__main__':
 	pool = Pool(cores)
 	results = pool.map(Simulate_Synch, [(A, X0s[i,:], CLH, T, Func_net, params, synchtol) for i in range(nn)])	
 	pool.close()
-	times = np.array([i[1] for i in results if i]).reshape((nn,))
+	times = np.array([i[1] for i in results if i])
 	X = np.array([i[0][:,0:3*N:3] for i in results if i]).reshape((T,N))
 	Y = np.array([i[0][:,1:3*N+1:3] for i in results if i]).reshape((T,N))
 	Z = np.array([i[0][:,2:3*N+1:3] for i in results if i]).reshape((T,N))
