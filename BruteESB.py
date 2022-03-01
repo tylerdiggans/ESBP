@@ -23,6 +23,8 @@ def get_input():
 						help='The interval from MSF for normalized coupling eigs')
 	parser.add_argument('--C_max', default=None, 
 						help='coupling strength limitation')
+	parser.add_argument('--start', default=None, 
+						help='skip to start number of edges')
 	parser.add_argument('--matrix', default=None, 
 						help='change the matrix to RW')
 	parser.add_argument('--Adj', default=None, 
@@ -104,11 +106,16 @@ def process_input(args):
 		cores = int(args.cores)
 	else:
 		cores = cpu_count()
+	if args.start:
+		start = int(args.start)
+	else:
+		start = None
+
 	if not args.Positions:
 		X = None
 	else:
 		X = np.loadtxt(args.Positions)
-	return Func, DFunc, params, H, Interval, C_max, args.matrix, args.Adj, G_name, cores, X, args.plotting, savefile
+	return Func, DFunc, params, H, Interval, C_max, args.matrix, args.Adj, G_name, cores,start, X, args.plotting, savefile
  
 
 def powerset(iterable,N_min,N_max):
@@ -148,7 +155,7 @@ def Find_ratio(inputs):
 
 if __name__=='__main__':
 	args = get_input()
-	Func, DFunc, params, H, Interval, C_max, matrix, Adj, G_name, cores, X, plotting, savefile = process_input(args)
+	Func, DFunc, params, H, Interval, C_max, matrix, Adj, G_name, cores, start, X, plotting, savefile = process_input(args)
 # An adjacency matrix in a txt file saved using pandas to_csv()
 	A = np.genfromtxt(Adj, skip_header=1, delimiter=',')
 	G = nx.from_numpy_matrix(A)					# Create networkx.Graph
@@ -178,7 +185,10 @@ if __name__=='__main__':
 	# This creates the powerset of subsets of the edge list 
 	#		of length between N-1 (tree) and M-1 one less
 	# Start from N-1 (spanning trees) and go until we find self-backbone
-	cnt, M = [N-1, nx.number_of_edges(G)]
+	if start:
+		cnt, M = [start, nx.number_of_edges(G)]
+	else:
+		cnt, M = [N-1, nx.number_of_edges(G)]
 	notdone = True
 	while notdone and cnt<=M:
 		print('Calculating for %s graphs with %s edges' % (comb(M,cnt),cnt))
