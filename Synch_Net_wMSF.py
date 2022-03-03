@@ -51,7 +51,7 @@ def get_input():
 	parser.add_argument('--cores', default=None, 
 						help='Howmany cores to use for pool')
 	#------------------Plotting Parameters----------------------------
-	parser.add_argument('--plotting', default='Synch', 
+	parser.add_argument('--plotting', default=None, 
 						help='Used to suppress plotting functionality')
 	parser.add_argument('--saving', default=None, 
 						help='Choose to save off either "ICs" or "Synch" or both sep by comma')
@@ -151,8 +151,10 @@ def process_input(args):
 		saving = []
 	else:
 		saving = saving.split(',')
-	if len(args.plotting.split(','))>1:	
+	if args.plotting and len(args.plotting.split(','))>1:	
 		plotting = args.plotting.split(',')
+	else:
+		plotting= None
 	return Func, Func_net, DFunc, params, H, args.C, C_max, int(args.T_plot),args.matrix, A, G_name, nn, X0s, synchtol, cores, args.plotting, saving
 
 
@@ -178,11 +180,11 @@ def Simulate_Synch(inputs):
 		#supress warnings from odeint due to step size issues
 		warnings.simplefilter("ignore")
 		X1 = odeint(Func_net, X0, range(T), args=(a,b,c,eLH1), tfirst=True, atol=1E-6, rtol=1E-6) #odeopts1)
-	fig, axs = plt.subplots(3,)
-	axs[0].plot(X1[:,0::3])
-	axs[1].plot(X1[:,1::3])
-	axs[2].plot(X1[:,2::3])
-	plt.show()
+	# fig, axs = plt.subplots(3,)
+	# axs[0].plot(X1[:,0::3])
+	# axs[1].plot(X1[:,1::3])
+	# axs[2].plot(X1[:,2::3])
+	# plt.show()
 # Calculate how long it takes to synchronize to relative to the first node 
 #			within an L1 norm of synchtol (should probably change to pdist)
 	Distances = np.array([pdist(np.transpose(np.vstack([X1[i,::3],X1[i,1::3],X1[i,2::3]])),'minkowski', p=2.) for i in range(T)])
@@ -220,7 +222,7 @@ def Simulate_ICs(inputs):
 	skipped = 0
 	while cnt<nn:
 		# ADD PERTURBATIONS TO INITIAL CONDITIONS
-		X0 = S1 + np.array([local_random.normalvariate(0,1) for i in range(d*N)])
+		X0 = S1 + np.array([local_random.normalvariate(0,0.5) for i in range(d*N)])
 		
 	# Simulate the dynamics on the network with interaction
 		with warnings.catch_warnings():
@@ -293,7 +295,6 @@ if __name__=='__main__':
 		L = np.identity(N) - np.dot(np.linalg.inv(D),A)
 	E,V = np.linalg.eig(L)
 	E = np.sort(np.real(E))
-
 # Use MSF Analysis to optimize C if not provided
 	if not C:
 		if 'MSF' in plotting:
@@ -315,7 +316,7 @@ if __name__=='__main__':
 		CLH = np.kron(C*L,H)      #Kronecker Tensor Product
 	
 #Simulate until a single (3D) point is relaxed onto the attractor 
-	T_trans, T = [500, 400] 	# Sim time for transit to attractor and synch
+	T_trans, T = [1000, 500] 	# Sim time for transit to attractor and synch
 
 # If no Initial Conditions specified create a set of nn that will synchronize
 #  		Save these initial conditions in a txt file input by user for later reuse

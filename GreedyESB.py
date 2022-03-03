@@ -73,10 +73,14 @@ def process_input(args):
 		from Attractor_Functions import lorenz, DF_lorenz
 		Func = lorenz
 		DFunc = DF_lorenz
+	elif args.system == 'Harmonic':
+		from Attractor_Functions import harm, DF_harm
+		Func = harm
+		DFunc = DF_harm
+		H = H[:2,:2];
 	elif args.system == 'Chens':
-		from Attractor_Functions import chens, chens_net_ll, DF_chens
+		from Attractor_Functions import chens, DF_chens
 		Func = chens
-		Func_net = chens
 		DFunc = DF_chens
 	if args.cores:
 		cores = int(args.cores)
@@ -87,7 +91,9 @@ def process_input(args):
 	if args.Interval:
 		Interval = [float(i) for i in args.Interval.split(',')]
 	else:
-		Interval = NoneS
+		Interval = None
+	if args.system=='Harmonic':
+		Interval=[0.001,1000.]	
 	if not args.C_max:
 		# Impose a global coupling strength Maximum?
 		C_max = None

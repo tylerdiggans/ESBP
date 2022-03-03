@@ -85,7 +85,7 @@ def process_input(args):
 		Interval = [float(i) for i in args.Interval.split(',')]
 	else:
 		Interval = None
-	if args.system='Harmonic':
+	if args.system =='Harmonic':
 		Interval = [0.0001,10000.]
 # Optional setting maximum coupling strength to force interval (Harmonic)
 	if not args.C_max:
@@ -191,6 +191,8 @@ if __name__=='__main__':
 	else:
 		cnt, M = [N-1, nx.number_of_edges(G)]
 	notdone = True
+	Hmin = deepcopy(G)
+	bestratio = Interval[-1]/Interval[0]
 	while notdone and cnt<=M:
 		print('Calculating for %s graphs with %s edges' % (comb(M,cnt),cnt))
 		edgesets = powerset(G.edges(), cnt,cnt)
@@ -200,8 +202,6 @@ if __name__=='__main__':
 		#       able to exit the routine before checking ALL 
 		#       of powerset(G.edges, cnt,cnt)
 		for t in range(T):
-			if not notdone:
-				break
 			# Take the next 1000 edgesets
 			Some_edgesets = list(next(edgesets) for _ in range(1000))
 			pool = Pool(cores)
@@ -214,41 +214,47 @@ if __name__=='__main__':
 					# Save the smallest ratio of those that have been found
 					H, new_ratio = Output[np.argmin(Output[:,1]),:]
 					notdone= False
+					if new_ratio<bestratio:
+						Hmin = deepcopy(H)
+						bestratio = deepcopy(new_ratio)
 		# Finish off the remainder for cnt edges if none found yet
-		if notdone:
-			pool = Pool(cores)
-			results = pool.map(Find_ratio, [(N, ES, Interval, C_max, matrix) for ES in list(next(edgesets) for _ in range(comb(M,cnt) % 1000))])	
-			pool.close()
-			Output = np.array([(K,r) for K,r in results if r], dtype=object)
-			if len(Output) > 0:
-				if Output[:,1].any():
-					H, new_ratio = Output[np.argmin(Output[:,1]),:]
-					notdone= False
+		pool = Pool(cores)
+		results = pool.map(Find_ratio, [(N, ES, Interval, C_max, matrix) for ES in list(next(edgesets) for _ in range(comb(M,cnt) % 1000))])	
+		pool.close()
+		Output = np.array([(K,r) for K,r in results if r], dtype=object)
+		if len(Output) > 0:
+			if Output[:,1].any():
+				H, new_ratio = Output[np.argmin(Output[:,1]),:]
+				notdone= False
+				if new_ratio<bestratio:
+					Hmin = deepcopy(H)
+					bestratio = deepcopy(new_ratio)
+
 		# increment the number of edges being selected
 		cnt += 1
 	if not matrix:
-		E = nx.laplacian_spectrum(H)
+		E = nx.laplacian_spectrum(Hmin)
 	elif matrix=='RW':
-		E = nx.normalized_laplacian_spectrum(H)
+		E = nx.normalized_laplacian_spectrum(Hmin)
 	new_ratio = E[-1]/E[1]
-	print('Edges in G: %s \nEdges in H: %s\n' % (nx.number_of_edges(G), nx.number_of_edges(H)))
+	print('Edges in G: %s \nEdges in H: %s\n' % (nx.number_of_edges(G), nx.number_of_edges(Hmin)))
 	if savefile:
-		df = nx.convert_matrix.to_pandas_adjacency(H)
+		df = nx.convert_matrix.to_pandas_adjacency(Hmin)
 		df.to_csv(savefile, index=False)
 
 	# Find low energy positions for plotting (Generation, Nu) 
 	# X is used as the variable for Positions
 	if X is None:
-		X = SeparateEm(N, nx.adjacency_matrix(H), 40, 400, 1., N)
+		X = SeparateEm(N, nx.adjacency_matrix(Hmin), 40, 400, 1., N)
 		np.savetxt('./Backbones/Current_Positions.txt', X)		
 # plot the interactive backbone for manipulation
-	fig, ax = Plot3D(H,X,  width=0.75, dark=dark)
+	fig, ax = Plot3D(Hmin,X,  width=0.75, dark=dark)
 	ax.text(0, 0, 0, '$\lambda_N/\lambda_2=$%s' % np.round(new_ratio,2))
 	plt.show()
 
 # Make new GIF with correct ending positions
 	if plotting=='GIF':
-		ordered_edges = list(set(G.edges()) - set(H.edges()))
+		ordered_edges = list(set(G.edges()) - set(Hmin.edges()))
 		MakePlot3DBackbone(G_name, N, G, X, ordered_edges)
 
 # Find all the cycles of the backbone
@@ -257,7 +263,7 @@ if __name__=='__main__':
 		# lengths = [len(i) for i in cycles]
 		if dark:
 			plt.style.use('dark_background')
-		bas_lens = [len(i) for i in nx.cycle_basis(H)]
+		bas_lens = [len(i) for i in nx.cycle_basis(Hmin)]
 		fig, ax_cycle = plt.subplots(1, figsize=(10, 10))
 		ax_cycle.hist(bas_lens, bins = range(N))
 		ax_cycle.set_xlabel('Basis Cycle Lengths')
