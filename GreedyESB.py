@@ -13,7 +13,7 @@ from scipy.linalg import eigh as largest_eigh
 #from scipy.sparse.linalg.eigen.arpack import eigsh as largest_eigsh
 # Import some functions from my own py file
 from MSFTools import MSF
-from Utilities import Find_C, SeparateEm, Plot3D, MakePlot3DBackbone, find_all_cycles
+from Utilities import Find_C, SeparateEm, Plot3D, Plot2D, MakePlot3DBackbone, find_all_cycles
 
 
 def get_input():
@@ -229,9 +229,14 @@ if __name__=='__main__':
 		plt.close()
 
 # plot the interactive backbone for manipulation
-	fig, ax = Plot3D(H, X, width=1.0, dark=dark)
-	ax.text(0, 0, 0, '$\lambda_N/\lambda_2=$%s' % np.round(new_ratio,2))
+	if np.shape(H)[0]==3:
+		fig, ax = Plot3D(H, X, width=1.0, dark=dark)
+		ax.text(0, 0, 0, '$\lambda_N/\lambda_2=$%s' % np.round(new_ratio,2))
+	else:
+		fig, ax = Plot2D(H, X, width=1.0, dark=dark)
+		ax.text(0.1, 0, '$\lambda_N/\lambda_2=$%s' % np.round(new_ratio,2))
 	plt.show()
+
 	# E = nx.laplacian_spectrum(H)
 	# C = Find_C(Interval, E)
 	# if not C:

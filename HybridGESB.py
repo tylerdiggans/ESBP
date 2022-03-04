@@ -7,7 +7,7 @@ from copy import deepcopy
 from multiprocessing import Pool, cpu_count
 # Import some functions from my own py file
 from MSFTools import MSF
-from Utilities import Find_C, SeparateEm, Plot3D, MakePlot3DBackbone, find_all_cycles
+from Utilities import Find_C, SeparateEm, Plot3D, Plot2D, MakePlot3DBackbone, find_all_cycles
 
 
 def get_input():
@@ -193,10 +193,14 @@ if __name__=='__main__':
 	if X is None:
 		X = SeparateEm(N, nx.adjacency_matrix(H), 40, 400, 1., N)
 		np.savetxt('./Backbones/Current_Positions.txt', X)		
-	fig, ax = Plot3D(H,X,width=1.0, dark=dark)
-	ax.text(1, 0, 0, '$\lambda_N/\lambda_2=$%s' % np.round(new_ratio,2))
+# plot the interactive backbone for manipulation
+	if np.shape(H)[0]==3:
+		fig, ax = Plot3D(H, X, width=1.0, dark=dark)
+		ax.text(0, 0, 0, '$\lambda_N/\lambda_2=$%s' % np.round(new_ratio,2))
+	else:
+		fig, ax = Plot2D(H, X, width=1.0, dark=dark)
+		ax.text(0.1, 0.05, '$\lambda_N/\lambda_2=$%s' % np.round(new_ratio,2))
 	plt.show()
-
 	if plotting == 'GIF':
 	# Make new GIF with correct ending positions
 		MakePlot3DBackbone(G_name, N, G, X, ordered_edges, dark)

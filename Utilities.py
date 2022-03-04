@@ -254,6 +254,37 @@ def Plot3D(G,X,width=0.5, dark=False, color=None, axis=None):
 
 	return fig, ax 
 
+
+def Plot2D(G,X=None,width=0.5, dark=False, color=None, axis=None):
+	if dark:
+		plt.style.use('dark_background')
+		if not color:
+			color = 'w'
+	else:
+		plt.style.use('default')		
+		if not color:
+			color = 'k'
+	if axis:
+		ax = axis
+		fig = plt.gcf()
+	else:
+		fig = plt.figure()
+		ax = fig.add_subplot(111)
+	# if not X:
+	# 	C = nx.spring_layout(G,scale=2.0)
+	# 	X = np.array([[C[i][0],C[i][1]] for i in G.nodes()])
+	# 	print(X)
+	for e in G.edges():
+		print(e)
+		ax.plot([X[e[0],0],X[e[1],0]], 
+				[X[e[0],1],X[e[1],1]], 
+				color, linewidth=width)
+	if axis is None:
+		ax.scatter(X[:,0], X[:,1], s=400, marker='.')
+		ax.grid(False)
+		plt.axis('off')	
+	return fig, ax 
+
 def fig2img(fig):
 	"""Convert a Matplotlib figure to a PIL Image and return it"""
 	buf = io.BytesIO()
