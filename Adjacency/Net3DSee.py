@@ -184,16 +184,17 @@ def Plot2D(G,X=None,width=0.5, dark=False, color=None, axis=None):
 	else:
 		fig = plt.figure()
 		ax = fig.add_subplot(111)
-	if not X:
-		C = nx.planar_layout(G,scale=2.0)
-		X = np.array([[C[i][0],C[i][1]] for i in G.nodes()])
-		print(X)
+	# if not X:
+	# 	C = nx.spring_layout(G,scale=2.0)
+	# 	X = np.array([[C[i][0],C[i][1]] for i in G.nodes()])
+	# 	print(X)
 	for e in G.edges():
+		print(e)
 		ax.plot([X[e[0],0],X[e[1],0]], 
 				[X[e[0],1],X[e[1],1]], 
 				color, linewidth=width)
 	if axis is None:
-		ax.scatter(X[:,0], X[:,1], s=200, marker='.')
+		ax.scatter(X[:,0], X[:,1], s=400, marker='.')
 		ax.grid(False)
 		plt.axis('off')	
 	return fig, ax 
@@ -282,7 +283,8 @@ if __name__=='__main__':
 		X = SeparateEm(N, A, Generations, M, k, d)	
 #	dark = True
 	dark = False
-	if plotting:
+	print(np.shape(X))
+	if plotting and np.shape(X)[1]==3:
 		if B is None:
 			G = nx.Graph(A)
 			fig, ax = Plot3D(G,X,width=1.0, dark=dark)
@@ -297,5 +299,21 @@ if __name__=='__main__':
 			H = nx.Graph(B)
 			fig, ax = Plot3D(H,X,width=1.0, dark=dark)
 			plt.show()			
+	elif plotting and np.shape(X)[1]==2:
+		if B is None:
+			G = nx.Graph(A)
+			fig, ax = Plot2D(G,X,width=1.0, dark=dark)
+			plt.show()
+		elif plotting=='skeleton':
+			G = nx.Graph(A)			
+			H = nx.Graph(B)
+			fig, ax = Plot2D(G,X,width=0.5, dark=dark, color='--r')
+			fig, ax = Plot2D(H,X,width=2.0, dark=dark, color=None, axis=ax)			
+			plt.show()			
+		else:
+			H = nx.Graph(B)
+			fig, ax = Plot2D(H,X,width=1.0, dark=dark)
+			plt.show()			
+
 	if saving:
 		np.savetxt(savefile, X)

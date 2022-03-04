@@ -51,7 +51,7 @@ def get_input():
 	parser.add_argument('--cores', default=None, 
 						help='Howmany cores to use for pool')
 	#------------------Plotting Parameters----------------------------
-	parser.add_argument('--plotting', default=None, 
+	parser.add_argument('--plotting', default='Synch', 
 						help='Used to suppress plotting functionality')
 	parser.add_argument('--saving', default=None, 
 						help='Choose to save off either "ICs" or "Synch" or both sep by comma')
@@ -175,20 +175,27 @@ def Simulate_Synch(inputs):
 
 	A, X0, eLH1, T, Func_net, params, synchtol= inputs
 	a,b,c = params
+	d = int(np.shape(eLH1)[0]/np.shape(A)[0])
 # Simulate the dynamics
 	with warnings.catch_warnings():
 		#supress warnings from odeint due to step size issues
 		warnings.simplefilter("ignore")
-		X1 = odeint(Func_net, X0, range(T), args=(a,b,c,eLH1), tfirst=True, atol=1E-6, rtol=1E-6) #odeopts1)
-	# fig, axs = plt.subplots(3,)
-	# axs[0].plot(X1[:,0::3])
-	# axs[1].plot(X1[:,1::3])
-	# axs[2].plot(X1[:,2::3])
-	# plt.show()
+		X1 = odeint(Func_net, X0, range(T), args=(a,b,c,eLH1), tfirst=True, atol=1E-10, rtol=1E-10) #odeopts1)
+		# fig, axs = plt.subplots(2,)
+		# for i in range(N):
+		# 	axs[0].plot(X1[:,2*i])
+		# 	axs[1].plot(X1[:,2*i+1])
+		# axs[0].set_ylabel('x')
+		# axs[1].set_ylabel('y')
+		# axs[0].set_xlabel('t')
+		# axs[1].set_xlabel('t')
+		# plt.show()
 # Calculate how long it takes to synchronize to relative to the first node 
 #			within an L1 norm of synchtol (should probably change to pdist)
-	Distances = np.array([pdist(np.transpose(np.vstack([X1[i,::3],X1[i,1::3],X1[i,2::3]])),'minkowski', p=2.) for i in range(T)])
+	Distances = np.array([pdist(np.transpose(np.vstack([X1[i,j::d] for j in range(d)])),'minkowski', p=2.) for i in range(T)])
 	errors = [max(Distances[i,:]) for i in range(T)]	
+#	print(Distances,errors)
+
 	timetosynch = next(i for i,x in enumerate(errors) if x<synchtol)
 # Output the time it took to synchronize to within a tolerance
 	return X1, timetosynch
@@ -222,17 +229,19 @@ def Simulate_ICs(inputs):
 	skipped = 0
 	while cnt<nn:
 		# ADD PERTURBATIONS TO INITIAL CONDITIONS
-		X0 = S1 + np.array([local_random.normalvariate(0,0.5) for i in range(d*N)])
+		X0 = S1 + np.array([local_random.normalvariate(0,0.1) for i in range(d*N)])
 		
 	# Simulate the dynamics on the network with interaction
 		with warnings.catch_warnings():
 			#supress warnings from odeint due to step size issues
 			warnings.simplefilter("ignore")
-			X1 = odeint(Func_net, X0 ,range(T), args=(a,b,c, eLH1), tfirst=True, atol=1E-6, rtol=1E-6) #odeopts1)
+			X1 = odeint(Func_net, X0, range(T), args=(a,b,c,eLH1), tfirst=True, atol=1E-10, rtol=1E-10) #odeopts1)
+
 	# Calculate how long it takes to synchronize to relative to the first node 
 	#			within an L1 norm of synchtol (should probably change to pdist)
 		Distances = np.array([pdist(np.transpose(np.vstack([X1[i,j::d] for j in range(d)])),'minkowski', p=2.) for i in range(T)])
 		errors = [max(Distances[i,:]) for i in range(T)]
+#		print(Distances,errors)
 		if min(errors)<synchtol:
 			timetosynch = next(i for i,x in enumerate(errors) if x<synchtol)
 			synchtimes.append(timetosynch)
@@ -240,7 +249,7 @@ def Simulate_ICs(inputs):
 			cnt += 1
 		else:
 			skipped += 1
-		if skipped>5 and float(skipped/(skipped+cnt))>0.9:
+		if skipped>10 and float(skipped/(skipped+cnt))>0.9:
 			print('Not enough converging')
 			break
 #			print('skipped %s/%s potential IC due to divergence' % (skipped, skipped+cnt))
@@ -314,9 +323,9 @@ if __name__=='__main__':
 		CLH = C*L 				  # For the simple case
 	else:
 		CLH = np.kron(C*L,H)      #Kronecker Tensor Product
-	
+	d = np.shape(H)[0]
 #Simulate until a single (3D) point is relaxed onto the attractor 
-	T_trans, T = [1000, 500] 	# Sim time for transit to attractor and synch
+	T_trans, T = [1000, 2000] 	# Sim time for transit to attractor and synch
 
 # If no Initial Conditions specified create a set of nn that will synchronize
 #  		Save these initial conditions in a txt file input by user for later reuse
@@ -335,7 +344,7 @@ if __name__=='__main__':
 			results = pool.map(Simulate_ICs, [(G_name, N, 1, CLH, T_trans, T, Func, Func_net, params, synchtol, state[i]) for i in range(nn)])	
 			pool.close()
 		# collect results and reshape
-		X0s = np.array([i[0] for i in results]).reshape((nn,3*N))
+		X0s = np.array([i[0] for i in results]).reshape((nn,d*N))
 		times = np.array([i[1] for i in results]).reshape((nn,))
 		for i in results:
 			# Track how many of the perturbed IC did not converge for debugging
@@ -355,10 +364,12 @@ if __name__=='__main__':
 	pool = Pool(cores)
 	results = pool.map(Simulate_Synch, [(A, X0s[i,:], CLH, T, Func_net, params, synchtol) for i in range(nn)])	
 	pool.close()
-	times = np.array([i[1] for i in results if i])
-	X = np.array([i[0][:,0:3*N:3] for i in results if i]).reshape((T,N))
-	Y = np.array([i[0][:,1:3*N+1:3] for i in results if i]).reshape((T,N))
-	Z = np.array([i[0][:,2:3*N+1:3] for i in results if i]).reshape((T,N))
+	times = np.array([i[1] for i in results]).reshape((nn,))
+	print('average time=%s  sd=%s' % (np.mean(times),np.std(times)))
+	X = np.array([i[0][:,0:d*N:d] for i in results if i]).reshape((T,N*nn))
+	Y = np.array([i[0][:,1:d*N+1:d] for i in results if i]).reshape((T,N*nn))
+	if d==3:
+		Z = np.array([i[0][:,2:d*N+1:d] for i in results if i]).reshape((T,N*nn))
 	if 'Synch' in saving:
 		df = pd.DataFrame(np.vstack([X,Y,Z]))
 		Synch_file = './Synchronization/Synch_%s_%s_%s.txt' % (G_name, N, nn)
@@ -377,16 +388,27 @@ if __name__=='__main__':
 	# #thanks to the MSF)
 	if 'Synch' in plotting:
 #		plt.style.use('dark_background')
-		fig, axs = plt.subplots(3,)
-		for i in range(N):
-			axs[0].plot(X[:T_plot,i])
-			axs[1].plot(Y[:T_plot,i])
-			axs[2].plot(Z[:T_plot,i])
-		axs[0].set_ylabel('x')
-		axs[1].set_ylabel('y')
-		axs[2].set_ylabel('z')
-		axs[0].set_xlabel('t')
-		axs[1].set_xlabel('t')
-		axs[2].set_xlabel('t')
+		if d==3:
+			fig, axs = plt.subplots(3,)
+			for i in range(N):
+				axs[0].plot(X[:T_plot,i])
+				axs[1].plot(Y[:T_plot,i])
+				axs[2].plot(Z[:T_plot,i])
+			axs[0].set_ylabel('x')
+			axs[1].set_ylabel('y')
+			axs[2].set_ylabel('z')
+			axs[0].set_xlabel('t')
+			axs[1].set_xlabel('t')
+			axs[2].set_xlabel('t')
+		elif d==2:
+			fig, axs = plt.subplots(2,)
+			for i in range(N):
+				axs[0].plot(X[:T_plot,i])
+				axs[1].plot(Y[:T_plot,i])
+			axs[0].set_ylabel('x')
+			axs[1].set_ylabel('y')
+			axs[0].set_xlabel('t')
+			axs[1].set_xlabel('t')
+
 #		axs[0].legend(['0','1','2','3','4','5'])
 		plt.show()

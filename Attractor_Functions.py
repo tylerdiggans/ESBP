@@ -229,12 +229,12 @@ def harm_ll(t,w,a,b,c):
 #    b = 0.2
 #    c = 7;
 # Variables
-	x = w[::3]  
-	y = w[1::3]   
+	x = w[::2]  
+	y = w[1::2]   
 # Equations
 	dwdt = np.zeros((len(w),))
-	dwdt[::3] = y
-	dwdt[1::3] = -x
+	dwdt[::2] = y
+	dwdt[1::2] = -x
 	return dwdt
 
 def harm_net(t,w,a,b,c,eLH):
@@ -254,13 +254,13 @@ def harm_net_ll(t,w,a,b,c,eLH):
 #    b = 0.2
 #    c = 7;
 # Variables
-	x = w[::3]  
-	y = w[1::3]   
+	x = w[::2]  
+	y = w[1::2]   
 # Equations
 	# Negative Laplacian connection matrix as in Pecora Carroll
 	dwdt = np.zeros((len(w),))
-	dwdt[::3] = y
-	dwdt[1::3] = -x
+	dwdt[::2] = y
+	dwdt[1::2] = -x
 	dwdt -= np.dot(eLH,w)
 	return dwdt 
 

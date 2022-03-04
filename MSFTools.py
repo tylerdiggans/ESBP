@@ -105,7 +105,7 @@ def MSF(Func, DFunc, H, params, plotting):
 	while (Kb<maxK): # and len(zeroses)<2: 
 		# Initialize interval for zero searching
 		if len(zeroses)<1:
-			Ka = 0.001
+			Ka = 0
 		else:
 			Ka = zeroses[-1]+0.001
 			Kb = Ka+dK
@@ -170,7 +170,7 @@ def PlotMSF(Func, DFunc, H, params, cores):
 	# 	(assumes 2, but searches until maxK)
 	maxK, dK = [20., 0.1]	# largest allowable K and Kstep size
 	K = int(maxK/dK)
-	Ks = np.linspace(dK, maxK, num=K)
+	Ks = np.linspace(0, maxK-dK, num=K)
 	pool = Pool(cores)
 	results = pool.map(MSFLiapunov_ll, [(sol.y, dt, DFunc, Ks[i], H, params) for i in range(K)])	
 	pool.close()
@@ -199,7 +199,7 @@ def PlotMSF(Func, DFunc, H, params, cores):
 	ax.text(2,2, '%s\n' % zeroses) 
 	ax.set_xlabel('K')
 	ax.set_ylabel('$\Psi(K)$ (MSF)')
-	ax.set_title('Master Stability Function \n for Simple Oscillator')
+	ax.set_title('Master Stability Function \n for Harmonic Oscillator with Damper')
 	plt.show()
 	print(zeroses)
 	return zeroses
