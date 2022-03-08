@@ -96,12 +96,14 @@ if __name__=='__main__':
 # Laplacian
 	G = nx.Graph(A)
 	if positions is None:
-		pos = spring_layout(G)
+		pos = nx.spring_layout(G)
 		# pos = SeparateEm(N, A, 40, 500, 1., N)
 		# np.savetxt('positions2.txt', pos)
 	else:
 		pos = np.loadtxt(positions)
-	fig, ax = Plot2D(G, pos, width=1, dark=False) 
+
+		#fig, ax = Plot2D(G, pos, width=1, dark=False) 
+	nx.draw(G)
 	# ax.text(1, 0, 0, '$\lambda_N/\lambda_2=18.75$')
 	plt.show()
 
