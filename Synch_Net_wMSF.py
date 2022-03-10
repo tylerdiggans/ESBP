@@ -325,7 +325,7 @@ if __name__=='__main__':
 		CLH = np.kron(C*L,H)      #Kronecker Tensor Product
 	d = np.shape(H)[0]
 #Simulate until a single (3D) point is relaxed onto the attractor 
-	T_trans, T = [1000, 2000] 	# Sim time for transit to attractor and synch
+	T_trans, T = [1000, 500] 	# Sim time for transit to attractor and synch
 
 # If no Initial Conditions specified create a set of nn that will synchronize
 #  		Save these initial conditions in a txt file input by user for later reuse

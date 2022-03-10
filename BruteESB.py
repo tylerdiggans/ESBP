@@ -85,7 +85,7 @@ def process_input(args):
 		Interval = [float(i) for i in args.Interval.split(',')]
 	else:
 		Interval = None
-	if args.system='Harmonic':
+	if args.system=='Harmonic':
 		Interval = [0.0001,10000.]
 # Optional setting maximum coupling strength to force interval (Harmonic)
 	if not args.C_max:
