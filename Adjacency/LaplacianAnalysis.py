@@ -113,6 +113,7 @@ if __name__=='__main__':
 	V = np.round(V[:,order], 3)
 	print(E)
 	print('Eigenratio=%s' % (E[-1]/E[1]))
+	print(nx.global_reaching_centrality(G))
 # # random walk laplacian
 # 	Lrw = np.identity(N) - np.dot(np.linalg.inv(D),A)
 # 	Erw,Vrw = np.linalg.eig(Lrw)
